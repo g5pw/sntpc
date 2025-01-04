@@ -287,11 +287,11 @@ use log::debug;
 pub async fn get_time<U, T>(
     addr: net::SocketAddr,
     socket: &U,
-    context: NtpContext<T>,
+    context: &mut NtpContext<T>,
 ) -> Result<NtpResult>
 where
     U: NtpUdpSocket,
-    T: NtpTimestampGenerator + Copy,
+    T: NtpTimestampGenerator,
 {
     let result = sntp_send_request(addr, socket, context).await?;
 
@@ -405,7 +405,7 @@ where
 pub async fn sntp_send_request<U, T>(
     dest: net::SocketAddr,
     socket: &U,
-    context: NtpContext<T>,
+    context: &mut NtpContext<T>,
 ) -> Result<SendRequestResult>
 where
     U: NtpUdpSocket,
@@ -413,7 +413,7 @@ where
 {
     #[cfg(feature = "log")]
     debug!("send request - Address: {:?}", dest);
-    let request = NtpPacket::new(context.timestamp_gen);
+    let request = NtpPacket::new(&mut context.timestamp_gen);
 
     send_request(dest, &request, socket).await?;
     Ok(SendRequestResult::from(request))
@@ -544,7 +544,7 @@ where
 pub async fn sntp_process_response<U, T>(
     dest: net::SocketAddr,
     socket: &U,
-    mut context: NtpContext<T>,
+    context: &mut NtpContext<T>,
     send_req_result: SendRequestResult,
 ) -> Result<NtpResult>
 where
@@ -633,11 +633,11 @@ pub mod sync {
     pub fn get_time<U, T>(
         addr: net::SocketAddr,
         socket: &U,
-        context: NtpContext<T>,
+        context: &mut NtpContext<T>,
     ) -> Result<NtpResult>
     where
         U: NtpUdpSocket,
-        T: NtpTimestampGenerator + Copy,
+        T: NtpTimestampGenerator,
     {
         let result = sntp_send_request(addr, socket, context)?;
         #[cfg(feature = "log")]
@@ -725,11 +725,11 @@ pub mod sync {
     pub fn sntp_send_request<U, T>(
         dest: net::SocketAddr,
         socket: &U,
-        context: NtpContext<T>,
+        context: &mut NtpContext<T>,
     ) -> Result<SendRequestResult>
     where
         U: NtpUdpSocket,
-        T: NtpTimestampGenerator + Copy,
+        T: NtpTimestampGenerator,
     {
         Executor::new()
             .block_on(crate::sntp_send_request(dest, socket, context))
@@ -821,12 +821,12 @@ pub mod sync {
     pub fn sntp_process_response<U, T>(
         dest: net::SocketAddr,
         socket: &U,
-        context: NtpContext<T>,
+        context: &mut NtpContext<T>,
         send_req_result: SendRequestResult,
     ) -> Result<NtpResult>
     where
         U: NtpUdpSocket,
-        T: NtpTimestampGenerator + Copy,
+        T: NtpTimestampGenerator,
     {
         Executor::new().block_on(crate::sntp_process_response(
             dest,

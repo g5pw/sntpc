@@ -209,9 +209,9 @@ impl NtpPacket {
     const SNTP_CLIENT_MODE: u8 = 3;
     const SNTP_VERSION: u8 = 4 << 3;
 
-    pub fn new<T: NtpTimestampGenerator>(mut timestamp_gen: T) -> NtpPacket {
+    pub fn new<T: NtpTimestampGenerator>(timestamp_gen: &mut T) -> NtpPacket {
         timestamp_gen.init();
-        let tx_timestamp = get_ntp_timestamp(&timestamp_gen);
+        let tx_timestamp = get_ntp_timestamp(timestamp_gen);
 
         #[cfg(feature = "log")]
         debug!(target: "NtpPacket::new", "{}", tx_timestamp);
@@ -337,7 +337,7 @@ pub struct NtpContext<T: NtpTimestampGenerator> {
     pub timestamp_gen: T,
 }
 
-impl<T: NtpTimestampGenerator + Copy> NtpContext<T> {
+impl<T: NtpTimestampGenerator> NtpContext<T> {
     /// Create SNTP client context with the given timestamp generator
     pub fn new(timestamp_gen: T) -> Self {
         NtpContext { timestamp_gen }
